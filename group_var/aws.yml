@@ -1,0 +1,20 @@
+---
+application_name: health_monitor
+environment: development
+application_root: /opt/health_monitor
+
+required_package:
+  - git
+  - curl
+  - unzip
+
+application_directory:
+  - /opt/health-monitor
+  - /opt/health-monitor/logs
+  - /opt/health-monitor/config
+
+application_users:
+  - name: healthadmin
+    group: monitoring
+  - name: healthreader
+    group: monitoring

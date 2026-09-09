@@ -1,15 +1,43 @@
 ---
-- name: collect information from aws server
+- name: Configure application environment on AWS servers
   hosts: aws
   become: true
   gather_facts: true
 
   tasks:
-    - name: display server identity
+    - name: Display configuration summary
       ansible.builtin.debug:
-        msg: 
-         - "inventory name: {{inventory_hostname}}"
-         - "Hostname: {{ansible_hostname}}"
-         - "operating system: {{ansible_distribution}}"
-         - "private ip: {{ansible_default_ipv4.address}}"
+        msg:
+        - "Server: {{ inventory_hostname }}"
+        - "Application: {{ application_name }}"
+        - "Environment: {{ environment_name }}"
+        - "Owner: {{ deployment_owner }}"
+
+    - name: install required package
+      ansible.buildin.package:
+        name: "{{item}}"
+        state: present
+        loop: "{{require_package}}"
+
+    - name: create application groups
+      ansible.buildin.group::
+        name: monitoring
+        state: present
+
+    - name: Create application users
+      ansible.buildin.user:
+        name: "{{ item.name }}"
+        group: "{{ item.group }}"
+        state: present
+        create_home: true
+        loop: "{{ application_users }}"
+
+    - name: Create application directories
+      ansible.buildin.file:
+        path: "{{ item }}"
+        state: directory
+        owner: healthadmin
+        group: monitoring
+        mode: "0750"
+        loop: "{{ application_directory }}"
 
