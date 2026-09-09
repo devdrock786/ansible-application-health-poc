@@ -6,7 +6,7 @@
 
   tasks:
     - name: Display configuration summary
-      ansible.builtin.debug:
+      ansible.buildin.debug:
         msg:
         - "Server: {{ inventory_hostname }}"
         - "Application: {{ application_name }}"
