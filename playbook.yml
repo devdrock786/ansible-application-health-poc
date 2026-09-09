@@ -4,9 +4,12 @@
   become: true
   gather_facts: true
 
+  vars:
+    deployment_owner: devendra
+
   tasks:
     - name: Display configuration summary
-      ansible.buildin.debug:
+      ansible.builtin.debug:
         msg:
         - "Server: {{ inventory_hostname }}"
         - "Application: {{ application_name }}"
@@ -14,30 +17,30 @@
         - "Owner: {{ deployment_owner }}"
 
     - name: install required package
-      ansible.buildin.package:
-        name: "{{item}}"
+      ansible.builtin.package:
+        name: "{{ item }}"
         state: present
-        loop: "{{require_package}}"
+      loop: "{{ require_package }}"
 
     - name: create application groups
-      ansible.buildin.group::
+      ansible.builtin.group:
         name: monitoring
         state: present
 
     - name: Create application users
-      ansible.buildin.user:
+      ansible.builtin.user:
         name: "{{ item.name }}"
         group: "{{ item.group }}"
         state: present
         create_home: true
-        loop: "{{ application_users }}"
+      loop: "{{ application_users }}"
 
     - name: Create application directories
-      ansible.buildin.file:
+      ansible.builtin.file:
         path: "{{ item }}"
         state: directory
         owner: healthadmin
         group: monitoring
         mode: "0750"
-        loop: "{{ application_directory }}"
+      loop: "{{ application_directory }}"
 
