@@ -5,8 +5,7 @@ application_root: /opt/health-monitor
 
 required_packages:
   - git
-  - curl
-
+  - unzip
 
 application_directories:
   - /opt/health-monitor
