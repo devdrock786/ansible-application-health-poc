@@ -1,14 +1,14 @@
 ---
-application_name: health_monitor
-environment: development
-application_root: /opt/health_monitor
+application_name: health-monitor
+environment_name: development
+application_root: /opt/health-monitor
 
-required_package:
+required_packages:
   - git
   - curl
   - unzip
 
-application_directory:
+application_directories:
   - /opt/health-monitor
   - /opt/health-monitor/logs
   - /opt/health-monitor/config

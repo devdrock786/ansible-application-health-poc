@@ -20,7 +20,7 @@
       ansible.builtin.package:
         name: "{{ item }}"
         state: present
-      loop: "{{ require_package }}"
+      loop: "{{ required_packages }}"
 
     - name: create application groups
       ansible.builtin.group:
@@ -42,5 +42,5 @@
         owner: healthadmin
         group: monitoring
         mode: "0750"
-      loop: "{{ application_directory }}"
+      loop: "{{ application_directories }}"
 
