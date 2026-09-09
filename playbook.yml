@@ -1,0 +1,15 @@
+---
+- name: collect information from aws server
+  hosts: aws
+  become: true
+  gather_facts: true
+
+  tasks:
+    - name: display server identity
+      ansible.builtin.debug:
+        msg: 
+         - "inventory name: {{inventory_hostname}}"
+         - "Hostname: {{ansible_hostname}}"
+         - "operating system: {{ansible_distribution}}"
+         - "private ip: {{ansible_default_ipv4.address}}"
+
