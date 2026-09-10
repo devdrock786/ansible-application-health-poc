@@ -1,0 +1,18 @@
+---
+exclude_paths:
+  - .github/
+  - .git/
+  - .cache/
+
+skip_list:
+  - yaml[line-length]
+  - name[casing]
+  - fqcn[action-core]
+
+warn_list:
+  - experimental
+  - no-changed-when
+
+use_default_rules: true
+
+offline: false
