@@ -112,6 +112,8 @@
         owner: healthadmin
         group: monitoring
         mode: "0640"
+      notify: Archive health report
+
 
     - name: Deploy monitoring configuration
       ansible.builtin.template:
