@@ -8,6 +8,16 @@
     deployment_owner: devendra
 
   tasks:
+    - name: Validate required configuration
+      ansible.builtin.assert:
+        that:
+          - application_name is defined
+          - required_packages | length > 0
+          - disk_warning_threshold | int > 0
+          - disk_warning_threshold | int <= 100
+        fail_msg: "Configuration validation failed"
+        success_msg: "Configuration is valid"
+
     - name: Display configuration summary
       ansible.builtin.debug:
         msg:
@@ -123,6 +133,39 @@
         group: monitoring
         mode: "0640"
       notify: Reload monitoring configuration
+      
+    - name: Application health check workflow
+      block:
+        - name: Check application endpoint
+          ansible.builtin.uri:
+            url: "http://localhost/health"
+            status_code: 200
+          register: endpoint_result
+
+        - name: Display success
+          ansible.builtin.debug:
+            msg: "Application is responding"
+
+      rescue:
+        - name: Display failure details
+          ansible.builtin.debug:
+            msg:
+              - "Failed task: {{ ansible_failed_task.name }}"
+              - "Server: {{ inventory_hostname }}"
+
+        - name: Write failure log
+          ansible.builtin.copy:
+            dest: /opt/health-monitor/logs/health-failure.log
+            content: "Health check failed at {{ ansible_date_time.iso8601 }}\n"
+            owner: healthadmin
+            group: monitoring
+            mode: "0640"
+
+      always:
+        - name: Display completion
+          ansible.builtin.debug:
+            msg: "Health check workflow completed"
+    
 
   handlers:
     - name: Reload monitoring configuration
@@ -132,3 +175,5 @@
     - name: Archive health report
       ansible.builtin.debug:
         msg: "Health report updated on {{ inventory_hostname }}. Archiving would happen here."
+
+    
