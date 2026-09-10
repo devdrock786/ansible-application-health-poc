@@ -104,3 +104,25 @@
       ansible.builtin.debug:
         msg: "This server runs {{ ansible_distribution }} {{ ansible_distribution_version }}"
       when: ansible_distribution == "Amazon"
+
+    - name: Deploy health report
+      ansible.builtin.template:
+        src: health-report.j2
+        dest: /opt/health-monitor/health-report.txt
+        owner: healthadmin
+        group: monitoring
+        mode: "0640"
+
+    - name: Deploy monitoring configuration
+      ansible.builtin.template:
+        src: monitor.conf.j2
+        dest: /opt/health-monitor/config/monitor.conf
+        owner: healthadmin
+        group: monitoring
+        mode: "0640"
+      notify: Reload monitoring configuration
+
+  handlers:
+    - name: Reload monitoring configuration
+      ansible.builtin.debug:
+        msg: "Configuration changed on {{ inventory_hostname }}."

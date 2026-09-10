@@ -1,0 +1,39 @@
+{# Health report template - variables get filled per server #}
+========================================
+  {{ application_name }} Health Report
+========================================
+
+Environment : {{ environment_name | upper }}
+Owner       : {{ deployment_owner }}
+
+SERVER INFORMATION
+------------------
+Hostname     : {{ ansible_hostname }}
+Private IP   : {{ ansible_default_ipv4.address }}
+Operating OS : {{ ansible_distribution }} {{ ansible_distribution_version }}
+CPU Count    : {{ ansible_processor_vcpus }}
+Total Memory : {{ ansible_memtotal_mb }} MB
+
+INSTALLED PACKAGES
+------------------
+{% for package_name in required_packages %}
+- {{ package_name }}
+{% endfor %}
+
+RESOURCE STATUS
+---------------
+Disk Usage : {{ disk_usage_percent }}%
+{% if disk_usage_percent | int >= disk_warning_threshold | int %}
+Disk Status : WARNING
+{% else %}
+Disk Status : HEALTHY
+{% endif %}
+
+Memory : {{ ansible_memtotal_mb }} MB
+{% if ansible_memtotal_mb | int < memory_warning_threshold | int %}
+Memory Status : LOW
+{% else %}
+Memory Status : OK
+{% endif %}
+
+========================================
