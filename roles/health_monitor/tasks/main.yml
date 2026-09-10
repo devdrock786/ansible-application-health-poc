@@ -1,0 +1,196 @@
+---
+- name: Validate required configuration
+  ansible.builtin.assert:
+    that:
+      - application_name is defined
+      - required_packages | length > 0
+      - disk_warning_threshold | int > 0
+      - disk_warning_threshold | int <= 100
+    fail_msg: "Configuration validation failed"
+    success_msg: "Configuration is valid"
+  tags:
+    - validate
+
+- name: Display configuration summary
+  ansible.builtin.debug:
+    msg:
+      - "Server: {{ inventory_hostname }}"
+      - "Application: {{ application_name }}"
+      - "Environment: {{ environment_name }}"
+      - "Owner: {{ deployment_owner }}"
+  tags:
+    - summary
+
+- name: Install required packages
+  ansible.builtin.package:
+    name: "{{ item }}"
+    state: present
+  loop: "{{ required_packages }}"
+  tags:
+    - packages
+
+- name: Create application group
+  ansible.builtin.group:
+    name: "{{ application_group }}"
+    state: present
+  tags:
+    - users
+
+- name: Create application users
+  ansible.builtin.user:
+    name: "{{ item.name }}"
+    group: "{{ item.group }}"
+    state: present
+    create_home: true
+  loop: "{{ application_users }}"
+  tags:
+    - users
+
+- name: Create application directories
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: directory
+    owner: "{{ application_owner }}"
+    group: "{{ application_group }}"
+    mode: "{{ directory_permissions }}"
+  loop: "{{ application_directories }}"
+  tags:
+    - directories
+
+- name: Check root disk usage
+  ansible.builtin.command:
+    cmd: df -P /
+  register: disk_check_result
+  changed_when: false
+  tags:
+    - always
+
+- name: Extract disk usage percentage
+  ansible.builtin.set_fact:
+    disk_usage_percent: "{{ disk_check_result.stdout_lines[1].split()[4] | replace('%', '') | int }}"
+  tags:
+    - always
+
+- name: Check configuration directory
+  ansible.builtin.stat:
+    path: "{{ application_root }}/config"
+  register: config_directory_result
+  tags:
+    - checks
+
+- name: Display collected values
+  ansible.builtin.debug:
+    msg:
+      - "Disk usage: {{ disk_usage_percent }}"
+      - "Disk threshold: {{ disk_warning_threshold }}"
+      - "Memory MB: {{ ansible_memtotal_mb }}"
+      - "Config directory exists: {{ config_directory_result.stat.exists }}"
+  tags:
+    - checks
+
+- name: Display disk warning
+  ansible.builtin.debug:
+    msg: "WARNING: Disk usage is {{ disk_usage_percent }}% on {{ inventory_hostname }}"
+  when: disk_usage_percent | int >= disk_warning_threshold | int
+  tags:
+    - checks
+
+- name: Display disk healthy message
+  ansible.builtin.debug:
+    msg: "HEALTHY: Disk usage is {{ disk_usage_percent }}% on {{ inventory_hostname }}"
+  when: disk_usage_percent | int < disk_warning_threshold | int
+  tags:
+    - checks
+
+- name: Display configuration directory found
+  ansible.builtin.debug:
+    msg: "SUCCESS: Configuration directory exists"
+  when: config_directory_result.stat.exists
+  tags:
+    - checks
+
+- name: Display configuration directory missing
+  ansible.builtin.debug:
+    msg: "ERROR: Configuration directory does not exist"
+  when: not config_directory_result.stat.exists
+  tags:
+    - checks
+
+- name: Display low memory warning
+  ansible.builtin.debug:
+    msg: "LOW MEMORY: Only {{ ansible_memtotal_mb }} MB available"
+  when: ansible_memtotal_mb | int < memory_warning_threshold | int
+  tags:
+    - checks
+
+- name: Display critical resource warning
+  ansible.builtin.debug:
+    msg: "CRITICAL: Disk and memory both under pressure"
+  when:
+    - disk_usage_percent | int >= disk_warning_threshold | int
+    - ansible_memtotal_mb | int < memory_warning_threshold | int
+  tags:
+    - checks
+
+- name: Display Amazon Linux confirmation
+  ansible.builtin.debug:
+    msg: "This server runs {{ ansible_distribution }} {{ ansible_distribution_version }}"
+  when: ansible_distribution == "Amazon"
+  tags:
+    - checks
+
+- name: Deploy health report
+  ansible.builtin.template:
+    src: health-report.j2
+    dest: "{{ application_root }}/{{ report_file_name }}"
+    owner: "{{ application_owner }}"
+    group: "{{ application_group }}"
+    mode: "{{ file_permissions }}"
+  notify: Archive health report
+  tags:
+    - report
+
+- name: Deploy monitoring configuration
+  ansible.builtin.template:
+    src: monitor.conf.j2
+    dest: "{{ application_root }}/config/{{ config_file_name }}"
+    owner: "{{ application_owner }}"
+    group: "{{ application_group }}"
+    mode: "{{ file_permissions }}"
+  notify: Reload monitoring configuration
+  tags:
+    - report
+
+- name: Application health check workflow
+  block:
+    - name: Check application endpoint
+      ansible.builtin.uri:
+        url: "http://localhost/health"
+        status_code: 200
+      register: endpoint_result
+
+    - name: Display success
+      ansible.builtin.debug:
+        msg: "Application is responding"
+
+  rescue:
+    - name: Display failure details
+      ansible.builtin.debug:
+        msg:
+          - "Failed task: {{ ansible_failed_task.name }}"
+          - "Server: {{ inventory_hostname }}"
+
+    - name: Write failure log
+      ansible.builtin.copy:
+        dest: "{{ application_root }}/logs/health-failure.log"
+        content: "Health check failed at {{ ansible_date_time.iso8601 }}\n"
+        owner: "{{ application_owner }}"
+        group: "{{ application_group }}"
+        mode: "{{ file_permissions }}"
+
+  always:
+    - name: Display completion
+      ansible.builtin.debug:
+        msg: "Health check workflow completed"
+  tags:
+    - health

@@ -1,0 +1,7 @@
+---
+application_group: monitoring
+application_owner: healthadmin
+report_file_name: health-report.txt
+config_file_name: monitor.conf
+directory_permissions: "0750"
+file_permissions: "0640"

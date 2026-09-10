@@ -1,0 +1,8 @@
+---
+- name: Reload monitoring configuration
+  ansible.builtin.debug:
+    msg: "Configuration changed on {{ inventory_hostname }}."
+
+- name: Archive health report
+  ansible.builtin.debug:
+    msg: "Health report updated on {{ inventory_hostname }}."
