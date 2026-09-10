@@ -2,7 +2,7 @@
 application_name: health-monitor
 environment_name: development
 application_root: /opt/health-monitor
-disk_warning_threshold: 75
+disk_warning_threshold: 60
 memory_warning_threshold: 1500
 
 required_packages:
