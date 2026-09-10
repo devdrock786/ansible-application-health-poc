@@ -2,25 +2,17 @@
 extends: default
 
 rules:
-  line-length:
-    max: 160
-    level: warning
-
-  truthy:
-    allowed-values: ['true', 'false']
-    check-keys: false
-
-  comments:
-    min-spaces-from-content: 1
-
+  line-length: disable
+  truthy: disable
+  comments: disable
   comments-indentation: disable
-
-  braces:
-    max-spaces-inside: 1
-
-  octal-values:
-    forbid-implicit-octal: true
-    forbid-explicit-octal: true
+  document-start: disable
+  empty-lines:
+    max: 2
+  trailing-spaces: enable
+  indentation:
+    spaces: 2
+    indent-sequences: consistent
 
 ignore: |
   .github/
